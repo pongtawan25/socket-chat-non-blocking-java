@@ -12,6 +12,7 @@ import java.util.Set;
 public class Client {
 
     public static void main(String[] args) throws Exception {
+        Scanner sc = new Scanner(System.in);
         Selector selector = Selector.open();
 
         SocketChannel clientCh = SocketChannel.open();
@@ -35,6 +36,21 @@ public class Client {
                         ch.close();
                         continue;
                     }
+
+                    new Thread(() -> {
+                        while (true) {
+                            try {
+                                ByteBuffer buf = ByteBuffer.allocate(20);
+                                String massage = sc.nextLine();
+                                buf.put(massage.getBytes());
+                                buf.flip();
+                                ch.write(buf);
+                            } catch (Exception e) {
+
+                            }
+                        }
+                    }).start();
+
                     System.out.println("Connecting with " + ch.getLocalAddress() + " to "
                             + ch.getRemoteAddress());
                     ch.configureBlocking(false);
@@ -42,7 +58,6 @@ public class Client {
                 }
 
                 if (key.isReadable()) {
-                    System.out.println("READ");
                     SocketChannel ch = (SocketChannel) key.channel();
                     ByteBuffer buf = ByteBuffer.allocate(20);
                     int n = ch.read(buf);
@@ -51,33 +66,9 @@ public class Client {
                         continue;
                     }
                     buf.flip();
-                    String message = new String(buf.array());
-                    System.out.println(message.trim());
-
-                    if (message.trim().equalsIgnoreCase("Connected")) {
-                        new Thread(() -> {
-                            try {
-                                while (true) {
-                                    Scanner sc = new Scanner(System.in);
-                                    SocketChannel ch2 = (SocketChannel) key.channel();
-                                    System.out.println("WRITE");
-                                    ByteBuffer buf2 = ByteBuffer.allocate(20);
-//                                    System.out.print(ch2.getLocalAddress() + " : ");
-                                    String msg = sc.nextLine();
-                                    buf2.put(msg.getBytes());
-                                    buf2.flip();
-                                    ch2.write(buf2);
-
-//                                    ch.read(buf2);
-//                                    buf2.flip();
-//                                    System.out.println(new String(buf2.array()));
-                                }
-                            } catch (Exception e) {
-
-                            }
-                        }).start();
-                    }
+                    System.out.println(new String(buf.array()));
                 }
+
             }
         }
     }

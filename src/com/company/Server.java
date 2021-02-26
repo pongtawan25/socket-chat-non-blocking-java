@@ -38,34 +38,29 @@ public class Server {
                     clientChList.add(clientCh);
                     System.out.println("Connect from " + clientCh.getRemoteAddress());
                     clientCh.configureBlocking(false);
-                    clientCh.register(selector, SelectionKey.OP_WRITE);
-                }
-
-                if (key.isWritable()) {
-                    System.out.println("Writing Connection");
-                    SocketChannel ch = (SocketChannel) key.channel();
-                    ByteBuffer buf = ByteBuffer.allocate(20);
-                    String message = "Connected";
-                    buf.put(message.getBytes());
-                    buf.flip();
-                    ch.write(buf);
-                    ch.configureBlocking(false);
-                    ch.register(selector, SelectionKey.OP_READ);
+                    clientCh.register(selector, SelectionKey.OP_READ);
                 }
 
                 if (key.isReadable()) {
-                    System.out.println("Reading");
                     SocketChannel ch = (SocketChannel) key.channel();
                     ByteBuffer buf = ByteBuffer.allocate(20);
-                    ch.read(buf);
+                    int n = ch.read(buf);
+                    if (n == -1) {
+                        ch.close();
+                        continue;
+                    }
                     buf.flip();
+                    String message = new String(buf.array());
 
                     int i = 1;
                     for (SocketChannel client : clientChList) {
+                        ByteBuffer buf2 = ByteBuffer.allocate(20);
+                        buf2.put(message.getBytes());
+                        buf2.flip();
                         System.out.println(i + " " + client.getRemoteAddress()
-                                + " : " + new String(buf.array()));
+                                + " : " + new String(buf2.array()));
+                        client.write(buf2);
                         i++;
-                        client.write(buf);
                     }
                 }
             }
